@@ -1,8 +1,10 @@
 package com.codepath.android.lollipopexercise.activities;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -11,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.codepath.android.lollipopexercise.R;
 import com.codepath.android.lollipopexercise.adapters.ContactsAdapter;
 import com.codepath.android.lollipopexercise.models.Contact;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
@@ -55,12 +58,34 @@ public class ContactsActivity extends AppCompatActivity {
         return true;
     }
 
+    @SuppressLint("ResourceAsColor")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
+
+        if (id == R.id.miAdd)
+        {
+            Contact newContact = Contact.getRandomContact(this);
+
+            contacts.add(0, newContact);
+            mAdapter.notifyDataSetChanged();
+
+            View.OnClickListener listener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    contacts.remove(0);
+                    mAdapter.notifyDataSetChanged();
+                }
+            };
+
+            Snackbar.make(rvContacts, "Added contact!", Snackbar.LENGTH_LONG)
+                    .setAction("Undo", listener)  // action text on the right side
+                    .setActionTextColor(R.color.primary_light)
+                    .show();
+        }
 
         return super.onOptionsItemSelected(item);
     }

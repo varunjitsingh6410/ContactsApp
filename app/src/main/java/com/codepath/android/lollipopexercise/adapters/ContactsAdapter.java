@@ -2,16 +2,27 @@ package com.codepath.android.lollipopexercise.adapters;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.util.Pair;
+import androidx.palette.graphics.Palette;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.codepath.android.lollipopexercise.R;
+import com.codepath.android.lollipopexercise.activities.DetailsActivity;
 import com.codepath.android.lollipopexercise.models.Contact;
 
 import java.util.List;
@@ -38,11 +49,47 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
 
     // Display data at the specified position
     @Override
-    public void onBindViewHolder(VH holder, int position) {
+    public void onBindViewHolder(final VH holder, int position) {
         Contact contact = mContacts.get(position);
         holder.rootView.setTag(contact);
         holder.tvName.setText(contact.getName());
-        Glide.with(mContext).load(contact.getThumbnailDrawable()).centerCrop().into(holder.ivProfile);
+
+
+        // Use Glide to get a callback with a Bitmap which can then
+// be used to extract a vibrant color from the Palette.
+
+// Define a listener for image loading
+        CustomTarget<Bitmap> target = new CustomTarget<Bitmap>() {
+            @Override
+            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                // TODO 1. Insert the bitmap into the profile image view
+                Glide.with(mContext).load(resource).into(holder.ivProfile);
+
+                // TODO 2. Use generate() method from the Palette API to get the vibrant color from the bitmap
+                // Set the result as the background color for `R.id.vPalette` view containing the contact's name.
+                // Pick one of the swatches
+                Palette palette = Palette.from(resource).generate();
+                Palette.Swatch vibrant = palette.getVibrantSwatch();
+                if (vibrant != null) {
+                    // Set the background color of a layout based on the vibrant color
+                    holder.vPalette.setBackgroundColor(vibrant.getRgb());
+                    // Update the title TextView with the proper text color
+                    holder.tvName.setTextColor(vibrant.getTitleTextColor());
+                }
+            }
+
+            @Override
+            public void onLoadCleared(@Nullable Drawable placeholder) {
+
+            }
+        };
+
+        // TODO: Clear the bitmap and the background color in adapter
+        holder.vPalette.setBackgroundColor(mContext.getResources().getColor(android.R.color.transparent));
+        holder.tvName.setTextColor(mContext.getResources().getColor(android.R.color.black));
+
+        // Instruct Glide to load the bitmap into the target defined above
+        Glide.with(mContext).asBitmap().load(contact.getThumbnailDrawable()).centerCrop().into(target);
     }
 
     @Override
@@ -71,7 +118,18 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.VH> {
                     final Contact contact = (Contact)v.getTag();
                     if (contact != null) {
                         // Fire an intent when a contact is selected
-                        // Pass contact object in the bundle and populate details activity.
+
+                        if (contact != null)
+                        {
+                            Intent i = new Intent(mContext, DetailsActivity.class);
+                            i.putExtra(DetailsActivity.EXTRA_CONTACT, contact);
+                            Pair<View, String> p1 = Pair.create((View)ivProfile, "profile");
+                            Pair<View, String> p2 = Pair.create(vPalette, "palette");
+                            Pair<View, String> p3 = Pair.create((View)tvName, "text");
+                            ActivityOptionsCompat options = ActivityOptionsCompat.
+                                    makeSceneTransitionAnimation(mContext, p1, p2, p3);
+                            mContext.startActivity(i, options.toBundle());
+                        }
                     }
                 }
             });
